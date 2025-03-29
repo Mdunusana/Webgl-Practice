@@ -1,0 +1,101 @@
+const canvas = document.querySelector('canvas')
+const gl = canvas.getContext('webgl')
+
+gl.clearColor(1.0,1.0,0.7,1);
+
+
+const vertices = new Float32Array([
+//    x    y     R   G   B
+    -0.3 , -0.3   , 1 , 0 , 0,
+      0  , 0.3 , 0 , 1 , 0,
+     0.3 ,  -0.3  , 0 , 0 , 1,
+
+])
+
+const buffer = gl.createBuffer()
+gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
+gl.bufferData(gl.ARRAY_BUFFER, vertices , gl.STATIC_DRAW)
+
+const vSource = `
+attribute vec2 pos;
+attribute vec3 col;
+uniform vec2 shift;
+uniform float shiftx;
+uniform float shifty;
+varying vec3 vCol;
+void main()
+{
+    vCol = col;
+    gl_Position = vec4(pos , 0.0 , 1.0) + vec4( shiftx , shifty , 0.0 , 0.0);
+}
+`
+
+const fSource = `
+precision mediump float;
+varying vec3 vCol;
+void main()
+{
+    gl_FragColor = vec4(vCol , 1.0);
+}
+`
+
+const vertexShader = gl.createShader(gl.VERTEX_SHADER)
+gl.shaderSource(vertexShader, vSource)
+gl.compileShader(vertexShader)
+
+const fragShader = gl.createShader(gl.FRAGMENT_SHADER)
+gl.shaderSource(fragShader, fSource)
+gl.compileShader(fragShader)
+
+const pro = gl.createProgram()
+gl.attachShader(pro, vertexShader)
+gl.attachShader(pro , fragShader)
+gl.linkProgram(pro)
+gl.useProgram(pro)
+
+const myPosLoc = gl.getAttribLocation(pro,`pos`)
+gl.enableVertexAttribArray(myPosLoc)
+gl.vertexAttribPointer(myPosLoc, 2 , gl.FLOAT , false, 5*4 , 0 )
+
+const locCol = gl.getAttribLocation(pro,`col`)
+gl.enableVertexAttribArray(locCol)
+gl.vertexAttribPointer(locCol,3,gl.FLOAT,false,5*4,2*4)
+
+const locSHift = gl.getUniformLocation(pro,`shift`)
+const locshiftx = gl.getUniformLocation(pro,`shiftx`)
+const locshifty = gl.getUniformLocation(pro,`shifty`)
+
+
+let state = 0;
+const but = document.getElementById(`myBut`)
+but.onclick = function changeState(){
+    if(state==1)
+        state = 0;
+    else
+    state = 1;
+    console.log(`Button pressed : ` + state)
+}
+
+let shiftx = 0;
+let shifty =0;
+
+draw()
+
+function draw()
+{
+    if(state==1)
+    {
+        shiftx += 0.001;
+        shifty += 0.002;
+    }
+        
+
+    //gl.uniform2f(locSHift,shiftx,shifty);
+    gl.uniform1f(locshiftx,shiftx)
+    gl.uniform1f(locshifty,shifty)
+
+    gl.clear(gl.COLOR_BUFFER_BIT)
+    gl.drawArrays(gl.TRIANGLES,0,3)
+    requestAnimationFrame(draw)
+}
+
